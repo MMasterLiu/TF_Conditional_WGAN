@@ -11,6 +11,10 @@ just run main.py.
 python3 main.py
 ```
 
-see main.py for the hyperparameters.
+here are samples at iter=7000 and iter=0to1500.
+
+![iter7000](https://raw.githubusercontent.com/yufuinn/TF_Conditional_WGAN/master/sample00007000.png "iter7000.png")
+![traning_process](https://raw.githubusercontent.com/yufuinn/TF_Conditional_WGAN/master/sample0to1500.gif "sample0to1500.gif")
+
 
 I run this codes on python3.6.1 with tensorflow1.4.1
