@@ -1,5 +1,4 @@
 import os
-import PIL.Image
 import numpy as np
 import tensorflow as tf
 
@@ -57,20 +56,30 @@ sess = tf.InteractiveSession()
 print("initialize")
 sess.run(tf.global_variables_initializer())
 
+printout_op = None
 def printout(dirname=None, suffix=None):
     if dirname is None: dirname = "."
     if suffix is None: suffix = ""
+
+    num_sample_per_class = 10
+    num_class = model.num_class if model.num_class != 0 else num_sample_per_class
+
+    global printout_op
+    if printout_op is None:
+        reshaped = tf.reshape(model.gen_image, [num_class,num_sample_per_class, model.image_size,model.image_size, model.num_channel])
+        fimg = tf.reshape(tf.transpose(reshaped, [0,2, 1,3, 4]), [num_class*model.image_size, num_sample_per_class*model.image_size, model.num_channel])
+        img = tf.cast((fimg + 1.0) * 128.0, tf.uint8)
+        printout_op = tf.image.encode_png(img)
+
+    feed_dict = {noise_batch_size: num_class*num_sample_per_class}
     if conditioned_model:
-        labels = [i for _ in range(10) for i in range(10)]
-        gimg = sess.run(model.gen_image, feed_dict={noise_batch_size:100, model.labels:labels}) # [batch_size, 32,32, 3]
-    else:
-        gimg = sess.run(model.gen_image, feed_dict={noise_batch_size:100}) # [batch_size, 32,32, 3]
-    gimg = gimg.reshape([10, 10, model.image_size,model.image_size, model.num_channel]).transpose([0,2, 1,3, 4])
-    gimg = gimg.reshape([gimg.shape[0]*gimg.shape[1], gimg.shape[2]*gimg.shape[3], model.num_channel]).squeeze()
-    gimg = ((gimg * 128.0) + 128.0).clip(0.0, 255.0).astype("uint8")
-    img = PIL.Image.fromarray(gimg)
+        labels = [c for _ in range(num_sample_per_class) for c in range(num_class)]
+        feed_dict[model.labels] = labels
+    binary = sess.run(printout_op, feed_dict=feed_dict)
+
     fname = "sample{}.png".format(suffix)
-    img.save(os.path.join(dirname, fname))
+    with open(os.path.join(dirname, fname), "wb") as f:
+        f.write(binary)
 
 def run(feed_use_supplement, start=0, end=100000):
     if feed_use_supplement:
